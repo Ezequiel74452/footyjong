@@ -22,6 +22,7 @@ class GameConstants {
   // Animation durations (seconds)
   static const double entranceDuration = 0.3;
   static const double entranceStagger = 0.008;
+  static const double entranceDrop = 200.0;
   static const double selectScaleUp = 1.08;
   static const double selectDuration = 0.1;
   static const double matchScalePeak = 1.15;

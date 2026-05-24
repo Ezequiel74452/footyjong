@@ -8,9 +8,10 @@ class GameEffects {
   GameEffects._();
 
   /// Board entrance: tile drops from above with bounce.
-  static MoveEffect entranceEffect(double endY) {
-    return MoveEffect.to(
-      Vector2(0, endY),
+  /// The tile should already be positioned [entranceDrop] pixels above its final y.
+  static MoveEffect entranceEffect() {
+    return MoveEffect.by(
+      Vector2(0, GameConstants.entranceDrop),
       EffectController(
         duration: GameConstants.entranceDuration,
         curve: Curves.bounceOut,
