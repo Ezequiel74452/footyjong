@@ -4,6 +4,7 @@ import 'package:flame/camera.dart';
 import 'package:flame/components.dart';
 import 'package:flame/game.dart';
 import 'package:flutter/foundation.dart';
+import 'package:flutter/scheduler.dart';
 import 'package:footyjong/config/game_constants.dart';
 import 'package:footyjong/game/components/board_component.dart';
 import 'package:footyjong/game/engine/game_state.dart';
@@ -17,13 +18,21 @@ class FootyJongGame extends FlameGame {
   final GameState gameState;
   late final BoardComponent board;
 
+  /// Optional callback fired after the game is won (gated via
+  /// [SchedulerBinding.instance.addPostFrameCallback] to avoid navigating
+  /// during a sync StreamController dispatch, and to let the victory
+  /// animation render for at least one frame before the callback fires).
+  /// Guarded by a disposal flag so it never fires after [onDispose].
+  final VoidCallback? onGameWon;
+
   /// HUD bridges — Flutter widgets listen to these via [ValueListenableBuilder].
   final ValueNotifier<int> scoreNotifier = ValueNotifier<int>(0);
   final ValueNotifier<int> levelNotifier = ValueNotifier<int>(1);
 
   StreamSubscription<GameEvent>? _eventSub;
+  bool _disposed = false;
 
-  FootyJongGame({required this.gameState});
+  FootyJongGame({required this.gameState, this.onGameWon});
 
   @override
   FutureOr<void> onLoad() {
@@ -41,13 +50,18 @@ class FootyJongGame extends FlameGame {
       paint: Paint()..color = GameConstants.viewportBackground,
     ));
 
+    // Subscribe to engine events BEFORE initialize so we never miss an event
+    _eventSub = gameState.events.listen(
+      _onEvent,
+      onError: (Object error, StackTrace stack) {
+        debugPrint('FootyJongGame event stream error: $error\n$stack');
+      },
+    );
+
     // Initialize the engine and build the visual board
     gameState.initialize(seed: DateTime.now().millisecondsSinceEpoch);
     board = BoardComponent(gameState: gameState);
     add(board);
-
-    // React to engine events
-    _eventSub = gameState.events.listen(_onEvent);
   }
 
   void _onEvent(GameEvent event) {
@@ -67,11 +81,15 @@ class FootyJongGame extends FlameGame {
         board.animateVictory();
         scoreNotifier.value = score;
         levelNotifier.value = level + 1;
+        SchedulerBinding.instance.addPostFrameCallback((_) {
+          if (!_disposed) onGameWon?.call();
+        });
     }
   }
 
   @override
   void onDispose() {
+    _disposed = true;
     _eventSub?.cancel();
     gameState.dispose();
     super.onDispose();
