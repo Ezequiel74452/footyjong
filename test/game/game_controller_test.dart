@@ -26,15 +26,16 @@ void main() {
     });
 
     // ---------------------------------------------------------------------------
-    // Test 2: onGameWon increments level and updates score
+    // Test 2: onGameWon records the score and marks game inactive
     // ---------------------------------------------------------------------------
-    test('onGameWon increments level and updates score', () {
+    test('onGameWon records score and marks game inactive', () {
       final controller = GameController(seed: fixedSeed);
       controller.startNewGame();
 
       controller.onGameWon(500);
 
-      expect(controller.currentLevel, 2);
+      // currentLevel stays at the level that was just completed
+      expect(controller.currentLevel, 1);
       expect(controller.currentScore, 500);
       expect(controller.gameActive, isFalse);
       expect(controller.getCurrentLayout(), isNull);
@@ -103,7 +104,7 @@ void main() {
       controller.onGameWon(500);
       controller.onGameWon(200); // should be ignored
 
-      expect(controller.currentLevel, 2);
+      expect(controller.currentLevel, 1);
       expect(controller.currentScore, 500);
       expect(controller.gameActive, isFalse);
     });
@@ -117,7 +118,7 @@ void main() {
 
       controller.onGameWon(0);
 
-      expect(controller.currentLevel, 2);
+      expect(controller.currentLevel, 1);
       expect(controller.currentScore, 0);
       expect(controller.gameActive, isFalse);
     });

@@ -1,11 +1,32 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:go_router/go_router.dart';
+import 'package:footyjong/game/game_controller.dart';
 import 'package:footyjong/screens/game_screen.dart';
 
 void main() {
-  testWidgets('GameScreen renders GameWidget and HUD', (tester) async {
+  testWidgets('GameScreen renders GameWidget and HUD with controller',
+      (tester) async {
+    final controller = GameController(seed: 42);
+    addTearDown(() => controller.dispose());
+    controller.startNewGame();
+
     await tester.pumpWidget(
-      const MaterialApp(home: GameScreen()),
+      MaterialApp.router(
+        routerConfig: GoRouter(
+          initialLocation: '/game',
+          routes: [
+            GoRoute(
+              path: '/game',
+              builder: (_, __) => GameScreen(controller: controller),
+            ),
+            GoRoute(
+              path: '/results',
+              builder: (_, __) => const Scaffold(body: Text('ResultsPage')),
+            ),
+          ],
+        ),
+      ),
     );
     // Pump to build the widget tree
     await tester.pump();
