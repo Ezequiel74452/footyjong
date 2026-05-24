@@ -72,6 +72,12 @@ class GameState {
   int get score => _score;
   int get level => _level;
 
+  /// Read-only access for the renderer to build the visual board.
+  List<List<TileData?>> get tilesByLayer => _tilesByLayer;
+  List<LayerDefinition> get layerDefs => _layerDefs;
+  LayoutDefinition get currentLayout => _currentLayout;
+  TileConfig get currentConfig => _currentConfig;
+
   GameState({
     required LayoutDefinition layout,
     required TileConfig config,
