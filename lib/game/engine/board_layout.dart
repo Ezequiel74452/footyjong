@@ -478,6 +478,10 @@ class BoardLayout {
   // ---------------------------------------------------------------------------
   // Registry
   // ---------------------------------------------------------------------------
+
+  /// Alias used by [LevelGenerator] — delegates to [all].
+  static List<LayoutDefinition> get allLayouts => all;
+
   static List<LayoutDefinition> get all => [
         pyramid,
         flatDiamond,
