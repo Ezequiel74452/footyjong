@@ -34,9 +34,10 @@ class GameController extends ChangeNotifier {
 
   /// Called when the current level is won.
   ///
-  /// Adds [score] to the cumulative score, advances the level counter, and
-  /// marks the game as inactive. [getCurrentLayout] returns `null` after
-  /// this call until the next game is started.
+  /// Adds [score] to the cumulative score and marks the game as inactive.
+  /// [currentLevel] stays at the level that was just completed.
+  /// [getCurrentLayout] returns `null` after this call until the next game
+  /// is started.
   ///
   /// Must be called exactly once per winning sequence. Calling this more
   /// than once or without an active game is a no-op.
@@ -44,7 +45,6 @@ class GameController extends ChangeNotifier {
     if (!_gameActive) return;
     assert(score >= 0, 'Score must be non-negative');
     _currentScore += score;
-    _currentLevel++;
     _gameActive = false;
     _currentResult = null;
     notifyListeners();
@@ -54,6 +54,12 @@ class GameController extends ChangeNotifier {
   /// no game is active (e.g. before [startNewGame] or after [onGameWon]).
   LayoutDefinition? getCurrentLayout() {
     return _currentResult?.layout;
+  }
+
+  /// The [TileConfig] for the currently generated level, or `null` when
+  /// no game is active.
+  TileConfig? getCurrentConfig() {
+    return _currentResult?.config;
   }
 
   /// Full reset to level 1 — intended for "Play Again".
