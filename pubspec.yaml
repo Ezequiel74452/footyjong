@@ -10,6 +10,7 @@ dependencies:
   flutter:
     sdk: flutter
   flame: ^1.21.0
+  go_router: ^14.0.0
 
 dev_dependencies:
   flutter_test:
