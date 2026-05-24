@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:footyjong/game/game_controller.dart';
+import 'package:footyjong/services/game_settings.dart';
 
 /// Landing screen with app title, Play button, and Settings gear icon.
 ///
@@ -8,8 +9,13 @@ import 'package:footyjong/game/game_controller.dart';
 /// Tap Settings → navigates to `/settings`.
 class HomeScreen extends StatelessWidget {
   final GameController controller;
+  final GameSettings settings;
 
-  const HomeScreen({super.key, required this.controller});
+  const HomeScreen({
+    super.key,
+    required this.controller,
+    required this.settings,
+  });
 
   @override
   Widget build(BuildContext context) {

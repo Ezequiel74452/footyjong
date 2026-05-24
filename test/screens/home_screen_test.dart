@@ -1,20 +1,40 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:footyjong/screens/home_screen.dart';
+import 'package:footyjong/services/game_settings.dart';
+import 'package:footyjong/services/persistence_service.dart';
 import 'package:footyjong/game/game_controller.dart';
+
+/// Helper: fully initialise PersistenceService.
+Future<void> _initPersistence() async {
+  SharedPreferences.setMockInitialValues({});
+  PersistenceService.resetForTesting();
+  await PersistenceService.init();
+}
+
+Future<GameSettings> _makeSettings() async {
+  await _initPersistence();
+  final s = GameSettings(PersistenceService.instance);
+  await s.load();
+  return s;
+}
 
 void main() {
   group('HomeScreen', () {
     testWidgets('displays title and navigation buttons', (tester) async {
       final controller = GameController(seed: 42);
       addTearDown(() => controller.dispose());
+      final settings = await _makeSettings();
+
       final router = GoRouter(
         initialLocation: '/',
         routes: [
           GoRoute(
             path: '/',
-            builder: (_, __) => HomeScreen(controller: controller),
+            builder: (_, __) =>
+                HomeScreen(controller: controller, settings: settings),
           ),
           GoRoute(
             path: '/game',
@@ -40,12 +60,15 @@ void main() {
     testWidgets('Play button navigates to /game', (tester) async {
       final controller = GameController(seed: 42);
       addTearDown(() => controller.dispose());
+      final settings = await _makeSettings();
+
       final router = GoRouter(
         initialLocation: '/',
         routes: [
           GoRoute(
             path: '/',
-            builder: (_, __) => HomeScreen(controller: controller),
+            builder: (_, __) =>
+                HomeScreen(controller: controller, settings: settings),
           ),
           GoRoute(
             path: '/game',
@@ -72,12 +95,15 @@ void main() {
     testWidgets('Settings icon navigates to /settings', (tester) async {
       final controller = GameController(seed: 42);
       addTearDown(() => controller.dispose());
+      final settings = await _makeSettings();
+
       final router = GoRouter(
         initialLocation: '/',
         routes: [
           GoRoute(
             path: '/',
-            builder: (_, __) => HomeScreen(controller: controller),
+            builder: (_, __) =>
+                HomeScreen(controller: controller, settings: settings),
           ),
           GoRoute(
             path: '/game',
