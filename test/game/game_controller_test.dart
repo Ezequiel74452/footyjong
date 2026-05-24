@@ -149,5 +149,34 @@ void main() {
       expect(controller.currentScore, 0);
       expect(controller.gameActive, isFalse);
     });
+
+    // ---------------------------------------------------------------------------
+    // Test 10: onGameWon records optional elapsed duration
+    // ---------------------------------------------------------------------------
+    test('onGameWon records elapsed duration', () {
+      final controller = GameController(seed: fixedSeed);
+      controller.startNewGame();
+
+      controller.onGameWon(500, elapsed: const Duration(seconds: 90));
+
+      expect(controller.elapsed, const Duration(seconds: 90));
+      expect(controller.currentScore, 500);
+      expect(controller.gameActive, isFalse);
+    });
+
+    // ---------------------------------------------------------------------------
+    // Test 11: resetGame clears elapsed
+    // ---------------------------------------------------------------------------
+    test('resetGame clears elapsed', () {
+      final controller = GameController(seed: fixedSeed);
+      controller.startNewGame();
+      controller.onGameWon(500, elapsed: const Duration(seconds: 90));
+
+      controller.resetGame();
+
+      expect(controller.elapsed, isNull);
+      expect(controller.currentScore, 0);
+      expect(controller.gameActive, isTrue);
+    });
   });
 }

@@ -12,12 +12,17 @@ class GameController extends ChangeNotifier {
   int _currentLevel = 1;
   int _currentScore = 0;
   bool _gameActive = false;
+  Duration? _elapsed;
 
   /// The current level number (read-only from outside).
   int get currentLevel => _currentLevel;
 
   /// The cumulative score across all levels in this session.
   int get currentScore => _currentScore;
+
+  /// The elapsed duration from the last completed game, or `null` before any
+  /// game is won.
+  Duration? get elapsed => _elapsed;
 
   /// Whether a game is in progress.
   bool get gameActive => _gameActive;
@@ -41,10 +46,18 @@ class GameController extends ChangeNotifier {
   ///
   /// Must be called exactly once per winning sequence. Calling this more
   /// than once or without an active game is a no-op.
-  void onGameWon(int score) {
+  /// Called when the current level is won.
+  ///
+  /// Adds [score] to the cumulative score, records the optional [elapsed]
+  /// duration, and marks the game as inactive.
+  ///
+  /// Must be called exactly once per winning sequence. Calling this more
+  /// than once or without an active game is a no-op.
+  void onGameWon(int score, {Duration? elapsed}) {
     if (!_gameActive) return;
     assert(score >= 0, 'Score must be non-negative');
     _currentScore += score;
+    _elapsed = elapsed;
     _gameActive = false;
     _currentResult = null;
     notifyListeners();
@@ -70,6 +83,7 @@ class GameController extends ChangeNotifier {
   void _initGame({required int level}) {
     _currentLevel = level;
     _currentScore = 0;
+    _elapsed = null;
     final result = _generator.generateLevel(level);
     _currentResult = result;
     _gameActive = true;

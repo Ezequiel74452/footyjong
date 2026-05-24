@@ -67,6 +67,7 @@ class _FootyJongAppState extends State<FootyJongApp> {
           builder: (_, __) => HomeScreen(
             controller: _controller,
             settings: widget.settings,
+            highScoreService: widget.highScoreService,
           ),
         ),
         GoRoute(
@@ -75,7 +76,10 @@ class _FootyJongAppState extends State<FootyJongApp> {
         ),
         GoRoute(
           path: '/results',
-          builder: (_, __) => ResultsScreen(controller: _controller),
+          builder: (_, __) => ResultsScreen(
+            controller: _controller,
+            highScoreService: widget.highScoreService,
+          ),
         ),
         GoRoute(
           path: '/settings',
