@@ -20,7 +20,9 @@ class FootyJongGame extends FlameGame {
 
   /// Optional callback fired after the game is won (gated via
   /// [SchedulerBinding.instance.addPostFrameCallback] to avoid navigating
-  /// during a sync StreamController dispatch).
+  /// during a sync StreamController dispatch, and to let the victory
+  /// animation render for at least one frame before the callback fires).
+  /// Guarded by a disposal flag so it never fires after [onDispose].
   final VoidCallback? onGameWon;
 
   /// HUD bridges — Flutter widgets listen to these via [ValueListenableBuilder].
@@ -28,6 +30,7 @@ class FootyJongGame extends FlameGame {
   final ValueNotifier<int> levelNotifier = ValueNotifier<int>(1);
 
   StreamSubscription<GameEvent>? _eventSub;
+  bool _disposed = false;
 
   FootyJongGame({required this.gameState, this.onGameWon});
 
@@ -73,14 +76,15 @@ class FootyJongGame extends FlameGame {
         board.animateVictory();
         scoreNotifier.value = score;
         levelNotifier.value = level + 1;
-        SchedulerBinding.instance.addPostFrameCallback(
-          (_) => onGameWon?.call(),
-        );
+        SchedulerBinding.instance.addPostFrameCallback((_) {
+          if (!_disposed) onGameWon?.call();
+        });
     }
   }
 
   @override
   void onDispose() {
+    _disposed = true;
     _eventSub?.cancel();
     gameState.dispose();
     super.onDispose();

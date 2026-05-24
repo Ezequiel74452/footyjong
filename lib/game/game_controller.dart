@@ -13,40 +13,50 @@ class GameController extends ChangeNotifier {
   int currentScore = 0;
   bool gameActive = false;
 
-  final LevelGenerator _generator = LevelGenerator();
+  final LevelGenerator _generator;
   LevelResult? _currentResult;
 
-  /// Resets everything to a fresh game at level 1 and generates the first layout.
+  GameController({int? seed}) : _generator = LevelGenerator(seed: seed);
+
+  /// Initialises a fresh game at level 1 and generates the first layout.
   void startNewGame() {
-    currentLevel = 1;
-    currentScore = 0;
-    gameActive = true;
-    _currentResult = _generator.generateLevel(currentLevel);
-    notifyListeners();
+    _initGame(level: 1);
   }
 
   /// Called when the current level is won.
   ///
   /// Adds [score] to the cumulative score, advances the level counter, and
-  /// marks the game as inactive so the UI can transition to a results screen.
+  /// marks the game as inactive. [getCurrentLayout] returns `null` after
+  /// this call until the next game is started.
+  ///
+  /// Must be called exactly once per winning sequence. Calling this more
+  /// than once or without an active game is a no-op.
   void onGameWon(int score) {
+    if (!gameActive) return;
+    assert(score >= 0, 'Score must be non-negative');
     currentScore += score;
     currentLevel++;
     gameActive = false;
+    _currentResult = null;
     notifyListeners();
   }
 
-  /// Returns the [LayoutDefinition] for the currently generated level.
-  LayoutDefinition getCurrentLayout() {
-    return _currentResult!.layout;
+  /// The [LayoutDefinition] for the currently generated level, or `null` when
+  /// no game is active (e.g. before [startNewGame] or after [onGameWon]).
+  LayoutDefinition? getCurrentLayout() {
+    return _currentResult?.layout;
   }
 
-  /// Full reset — same as [startNewGame], intended for "Play Again".
+  /// Full reset to level 1 — intended for "Play Again".
   void resetGame() {
-    currentLevel = 1;
+    _initGame(level: 1);
+  }
+
+  void _initGame({required int level}) {
+    currentLevel = level;
     currentScore = 0;
     gameActive = true;
-    _currentResult = _generator.generateLevel(currentLevel);
+    _currentResult = _generator.generateLevel(level);
     notifyListeners();
   }
 }
