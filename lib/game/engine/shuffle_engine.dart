@@ -47,8 +47,12 @@ class ShuffleEngine {
       for (int r = 0; r < layer.rows; r++) {
         for (int c = 0; c < layer.cols; c++) {
           if (layer.occupied[r][c]) {
-            layerTiles[r * layer.cols + c] = shuffled[tileIndex];
-            tileIndex++;
+            if (tileIndex < shuffled.length) {
+              layerTiles[r * layer.cols + c] = shuffled[tileIndex];
+              tileIndex++;
+            }
+            // If we've run out of tiles (reshuffle with fewer remaining tiles),
+            // leave extra positions as null.
           }
         }
       }

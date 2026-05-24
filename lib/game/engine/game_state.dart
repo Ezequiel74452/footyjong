@@ -64,7 +64,7 @@ class GameState {
   LayoutDefinition _currentLayout;
   TileConfig _currentConfig;
 
-  final _eventController = StreamController<GameEvent>.broadcast();
+  final _eventController = StreamController<GameEvent>.broadcast(sync: true);
   Stream<GameEvent> get events => _eventController.stream;
 
   GamePhase get phase => _phase;
@@ -116,7 +116,7 @@ class GameState {
       // Second selection
       if (tile.id == _selectedTile!.id) return; // same tile
 
-      if (tile.isMatchableWith(_selectedTile!)) {
+      if (MatchingEngine.isValidMatch(tile, _selectedTile!)) {
         // MATCH!
         _phase = GamePhase.matching;
         final posA = _selectedPosition!;

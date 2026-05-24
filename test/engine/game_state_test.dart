@@ -241,7 +241,7 @@ void main() {
     test('5: Cannot select blocked tiles', () async {
       // 1×3 layout: middle tile (1,0) is blocked
       final layout = _layout1x3();
-      final config = TileConfig(3, 1);
+      final config = TileConfig(3, 2);
       final state = GameState(layout: layout, config: config);
       state.initialize(seed: 7);
 

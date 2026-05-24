@@ -111,6 +111,12 @@ class MatchingEngine {
     return true;
   }
 
+  /// Returns `true` when [a] and [b] can be matched together — they have the
+  /// same [TileData.footballerIndex] and are not the same physical tile.
+  static bool isValidMatch(TileData a, TileData b) {
+    return a.id != b.id && a.footballerIndex == b.footballerIndex;
+  }
+
   /// Returns every tile that is currently free (selectable) on the board.
   static List<TileData> getFreeTiles(
     List<List<TileData?>> tilesByLayer,

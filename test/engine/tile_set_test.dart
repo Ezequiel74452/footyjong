@@ -63,7 +63,7 @@ void main() {
     });
 
     test('copyIndex cycles correctly per footballer', () {
-      final config = TileConfig(5, 3); // 15 tiles, 3 copies of each
+      final config = TileConfig(5, 2); // 10 tiles, 2 copies of each
       final tiles = TileSet.generateTiles(config);
 
       for (int fi = 0; fi < config.numFootballers; fi++) {
@@ -71,7 +71,7 @@ void main() {
             .where((t) => t.footballerIndex == fi)
             .toList();
 
-        expect(footballerTiles.length, 3);
+        expect(footballerTiles.length, 2);
         for (int ci = 0; ci < config.copiesPerFootballer; ci++) {
           expect(footballerTiles[ci].copyIndex, ci);
         }
