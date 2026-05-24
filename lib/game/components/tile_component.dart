@@ -122,26 +122,31 @@ class TileComponent extends PositionComponent with TapCallbacks {
   void playMatchAnimation() {
     _isMatched = true;
 
-    final cleanup = SequenceEffect(
-      [
-        ScaleEffect.to(
-          Vector2.all(GameConstants.matchScalePeak),
-          EffectController(duration: GameConstants.matchDuration * 0.4),
-        ),
-        ScaleEffect.to(
-          Vector2.all(0.0),
-          EffectController(duration: GameConstants.matchDuration * 0.6),
-        ),
-        OpacityEffect.to(
-          0.0,
-          EffectController(duration: GameConstants.matchDuration),
-        ),
-      ],
-      onComplete: () {
+    // Scale: up to peak then down to 0
+    add(SequenceEffect([
+      ScaleEffect.to(
+        Vector2.all(GameConstants.matchScalePeak),
+        EffectController(duration: GameConstants.matchDuration * 0.4),
+      ),
+      ScaleEffect.to(
+        Vector2.all(0.0),
+        EffectController(duration: GameConstants.matchDuration * 0.6),
+      ),
+    ]));
+
+    // Opacity: fade out over the full duration (runs in parallel)
+    add(OpacityEffect.to(
+      0.0,
+      EffectController(duration: GameConstants.matchDuration),
+    ));
+
+    // Remove after animation completes
+    Future.delayed(
+      Duration(milliseconds: (GameConstants.matchDuration * 1000).round()),
+      () {
         if (parent != null) removeFromParent();
       },
     );
-    add(cleanup);
   }
 
   void playShakeAnimation() {

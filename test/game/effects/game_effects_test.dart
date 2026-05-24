@@ -4,7 +4,7 @@ import 'package:footyjong/game/effects/game_effects.dart';
 void main() {
   group('GameEffects', () {
     test('entranceEffect returns a MoveEffect', () {
-      final effect = GameEffects.entranceEffect(300);
+      final effect = GameEffects.entranceEffect();
       expect(effect, isNotNull);
     });
 
