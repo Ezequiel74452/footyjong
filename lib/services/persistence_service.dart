@@ -30,6 +30,11 @@ class PersistenceKeys {
 class PersistenceService {
   PersistenceService._();
 
+  /// Test-only constructor that skips initialisation.
+  /// Subclassing fakes can use this to bypass the singleton init requirement.
+  @visibleForTesting
+  PersistenceService.testing() : _prefs = null;
+
   static PersistenceService? _instance;
 
   /// The global singleton instance. Throws if [init] has not completed
