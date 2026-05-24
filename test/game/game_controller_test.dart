@@ -68,8 +68,6 @@ void main() {
       int maxEasyStreak = 0;
       int currentEasyStreak = 0;
 
-      // Generate many level-1 layouts — the generator's streak tracking
-      // should prevent more than maxEasyStreak consecutive easy layouts.
       for (int i = 0; i < 100; i++) {
         controller.startNewGame();
         final layout = controller.getCurrentLayout()!;
@@ -83,7 +81,6 @@ void main() {
         }
       }
 
-      // With a fixed seed this assertion is deterministic.
       expect(maxEasyStreak, lessThanOrEqualTo(LevelGenerator.maxEasyStreak));
     });
 
@@ -94,6 +91,62 @@ void main() {
       final controller = GameController(seed: fixedSeed);
 
       expect(controller.getCurrentLayout(), isNull);
+    });
+
+    // ---------------------------------------------------------------------------
+    // Test 6: onGameWon is idempotent — second call is a no-op
+    // ---------------------------------------------------------------------------
+    test('onGameWon is idempotent', () {
+      final controller = GameController(seed: fixedSeed);
+      controller.startNewGame();
+
+      controller.onGameWon(500);
+      controller.onGameWon(200); // should be ignored
+
+      expect(controller.currentLevel, 2);
+      expect(controller.currentScore, 500);
+      expect(controller.gameActive, isFalse);
+    });
+
+    // ---------------------------------------------------------------------------
+    // Test 7: onGameWon with zero score is valid
+    // ---------------------------------------------------------------------------
+    test('onGameWon with zero score is accepted', () {
+      final controller = GameController(seed: fixedSeed);
+      controller.startNewGame();
+
+      controller.onGameWon(0);
+
+      expect(controller.currentLevel, 2);
+      expect(controller.currentScore, 0);
+      expect(controller.gameActive, isFalse);
+    });
+
+    // ---------------------------------------------------------------------------
+    // Test 8: resetGame works without a preceding startNewGame
+    // ---------------------------------------------------------------------------
+    test('resetGame works without prior startNewGame', () {
+      final controller = GameController(seed: fixedSeed);
+
+      controller.resetGame();
+
+      expect(controller.currentLevel, 1);
+      expect(controller.currentScore, 0);
+      expect(controller.gameActive, isTrue);
+      expect(controller.getCurrentLayout(), isA<LayoutDefinition>());
+    });
+
+    // ---------------------------------------------------------------------------
+    // Test 9: onGameWon without active game is a no-op
+    // ---------------------------------------------------------------------------
+    test('onGameWon without active game is a no-op', () {
+      final controller = GameController(seed: fixedSeed);
+
+      controller.onGameWon(500);
+
+      expect(controller.currentLevel, 1);
+      expect(controller.currentScore, 0);
+      expect(controller.gameActive, isFalse);
     });
   });
 }

@@ -9,9 +9,18 @@ import 'package:footyjong/game/models/models.dart';
 /// for replay — all without recreating the generator (streak tracking is
 /// preserved across calls).
 class GameController extends ChangeNotifier {
-  int currentLevel = 1;
-  int currentScore = 0;
-  bool gameActive = false;
+  int _currentLevel = 1;
+  int _currentScore = 0;
+  bool _gameActive = false;
+
+  /// The current level number (read-only from outside).
+  int get currentLevel => _currentLevel;
+
+  /// The cumulative score across all levels in this session.
+  int get currentScore => _currentScore;
+
+  /// Whether a game is in progress.
+  bool get gameActive => _gameActive;
 
   final LevelGenerator _generator;
   LevelResult? _currentResult;
@@ -32,11 +41,11 @@ class GameController extends ChangeNotifier {
   /// Must be called exactly once per winning sequence. Calling this more
   /// than once or without an active game is a no-op.
   void onGameWon(int score) {
-    if (!gameActive) return;
+    if (!_gameActive) return;
     assert(score >= 0, 'Score must be non-negative');
-    currentScore += score;
-    currentLevel++;
-    gameActive = false;
+    _currentScore += score;
+    _currentLevel++;
+    _gameActive = false;
     _currentResult = null;
     notifyListeners();
   }
@@ -53,10 +62,16 @@ class GameController extends ChangeNotifier {
   }
 
   void _initGame({required int level}) {
-    currentLevel = level;
-    currentScore = 0;
-    gameActive = true;
-    _currentResult = _generator.generateLevel(level);
+    _currentLevel = level;
+    _currentScore = 0;
+    final result = _generator.generateLevel(level);
+    _currentResult = result;
+    _gameActive = true;
     notifyListeners();
+  }
+
+  @override
+  void dispose() {
+    super.dispose();
   }
 }

@@ -50,13 +50,18 @@ class FootyJongGame extends FlameGame {
       paint: Paint()..color = GameConstants.viewportBackground,
     ));
 
+    // Subscribe to engine events BEFORE initialize so we never miss an event
+    _eventSub = gameState.events.listen(
+      _onEvent,
+      onError: (Object error, StackTrace stack) {
+        debugPrint('FootyJongGame event stream error: $error\n$stack');
+      },
+    );
+
     // Initialize the engine and build the visual board
     gameState.initialize(seed: DateTime.now().millisecondsSinceEpoch);
     board = BoardComponent(gameState: gameState);
     add(board);
-
-    // React to engine events
-    _eventSub = gameState.events.listen(_onEvent);
   }
 
   void _onEvent(GameEvent event) {
