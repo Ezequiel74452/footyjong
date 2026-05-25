@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flame/game.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
@@ -10,7 +11,7 @@ import 'package:footyjong/game/game_controller.dart';
 import 'package:footyjong/game/models/models.dart';
 
 /// Full-screen game view with a Flame [GameWidget] rendering the board and a
-/// Flutter HUD overlay showing score and level.
+/// Flutter HUD overlay showing timer, score, level, reshuffle, and forfeit.
 ///
 /// Accepts a [GameController] that must have been initialised (via
 /// [GameController.startNewGame] or [GameController.resetGame]) before this
@@ -31,6 +32,8 @@ class GameScreen extends StatefulWidget {
 
 class _GameScreenState extends State<GameScreen> {
   late final FootyJongGame _game;
+  Timer? _timer;
+  int _elapsedSeconds = 0;
 
   @override
   void initState() {
@@ -52,6 +55,8 @@ class _GameScreenState extends State<GameScreen> {
       gameState: GameState(layout: layout, config: config),
       onGameWon: _onGameWon,
     );
+
+    _startTimer();
   }
 
   /// Creates a minimal game instance so the widget tree doesn't crash when
@@ -66,21 +71,62 @@ class _GameScreenState extends State<GameScreen> {
     );
   }
 
-  /// Handles a game-won event: records the score, shuts down the game, and
-  /// navigates to the results screen.
+  void _startTimer() {
+    _elapsedSeconds = 0;
+    _game.timerNotifier.value = Duration.zero;
+    _timer = Timer.periodic(const Duration(seconds: 1), (_) {
+      if (!mounted) return;
+      _elapsedSeconds++;
+      _game.timerNotifier.value = Duration(seconds: _elapsedSeconds);
+    });
+  }
+
+  /// Handles a game-won event: records the elapsed time and score, shuts down
+  /// the game, and navigates to the results screen.
   ///
   /// The game is disposed synchronously BEFORE navigation so no stray event
   /// from an animation callback can fire after the state is already won.
   void _onGameWon() {
     if (!mounted) return;
+    _timer?.cancel();
+    final elapsed = Duration(seconds: _elapsedSeconds);
     final score = _game.scoreNotifier.value;
     _game.onDispose(); // prevent any further event processing
-    widget.controller.onGameWon(score);
+    widget.controller.onGameWon(score, elapsed: elapsed);
     context.go('/results');
+  }
+
+  /// Shows a forfeit confirmation dialog.  On confirm, the game is disposed,
+  /// the controller is reset, and the player is navigated home.
+  void _onForfeit() {
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Forfeit'),
+        content: const Text('Are you sure you want to forfeit?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () {
+              Navigator.of(ctx).pop();
+              _timer?.cancel();
+              _game.onDispose();
+              widget.controller.resetGame();
+              context.go('/');
+            },
+            child: const Text('Forfeit'),
+          ),
+        ],
+      ),
+    );
   }
 
   @override
   void dispose() {
+    _timer?.cancel();
     _game.onDispose();
     super.dispose();
   }
@@ -94,16 +140,31 @@ class _GameScreenState extends State<GameScreen> {
         body: Stack(
           children: [
             GameWidget(game: _game),
-            // HUD overlay
+            // HUD overlay — top right: timer, score, level, reshuffle
             Positioned(
               top: 16,
               right: 16,
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.end,
                 children: [
+                  // Timer (MM:SS format)
+                  ValueListenableBuilder<Duration?>(
+                    valueListenable: _game.timerNotifier,
+                    builder: (_, duration, __) {
+                      return Text(
+                        _formatDuration(duration),
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 20,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      );
+                    },
+                  ),
+                  const SizedBox(height: 8),
                   ValueListenableBuilder<int>(
                     valueListenable: _game.scoreNotifier,
-                    builder: (context, score, _) {
+                    builder: (_, score, __) {
                       return Text(
                         'Score: $score',
                         style: const TextStyle(
@@ -117,7 +178,7 @@ class _GameScreenState extends State<GameScreen> {
                   const SizedBox(height: 8),
                   ValueListenableBuilder<int>(
                     valueListenable: _game.levelNotifier,
-                    builder: (context, level, _) {
+                    builder: (_, level, __) {
                       return Text(
                         'Level: $level',
                         style: const TextStyle(
@@ -127,26 +188,74 @@ class _GameScreenState extends State<GameScreen> {
                       );
                     },
                   ),
+                  const SizedBox(height: 16),
+                  // Reshuffle button — visible only when deadlocked
+                  ValueListenableBuilder<bool>(
+                    valueListenable: _game.deadlockedNotifier,
+                    builder: (_, isDeadlocked, __) {
+                      if (!isDeadlocked) {
+                        return const SizedBox.shrink();
+                      }
+                      return Column(
+                        children: [
+                          const Text(
+                            'No valid moves!',
+                            style: TextStyle(
+                              color: Colors.redAccent,
+                              fontSize: 14,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                          const SizedBox(height: 8),
+                          ElevatedButton.icon(
+                            onPressed: _game.reshuffle,
+                            icon: const Icon(Icons.shuffle, size: 18),
+                            label: const Text('Reshuffle'),
+                          ),
+                        ],
+                      );
+                    },
+                  ),
                 ],
               ),
             ),
-            // Quit button — visible escape from PopScope(canPop: false)
+            // Top-left: quit button + forfeit button
             Positioned(
               top: 16,
               left: 16,
-              child: IconButton(
-                icon: const Icon(Icons.close, color: Colors.white70),
-                tooltip: 'Quit game',
-                onPressed: () {
-                  _game.onDispose();
-                  widget.controller.resetGame();
-                  context.go('/');
-                },
+              child: Row(
+                children: [
+                  IconButton(
+                    icon: const Icon(Icons.close, color: Colors.white70),
+                    tooltip: 'Quit game',
+                    onPressed: () {
+                      _timer?.cancel();
+                      _game.onDispose();
+                      widget.controller.resetGame();
+                      context.go('/');
+                    },
+                  ),
+                  TextButton(
+                    onPressed: _onForfeit,
+                    child: const Text(
+                      'Forfeit',
+                      style: TextStyle(color: Colors.white54, fontSize: 14),
+                    ),
+                  ),
+                ],
               ),
             ),
           ],
         ),
       ),
     );
+  }
+
+  /// Formats a [Duration] as `MM:SS`.  Returns `00:00` for `null`.
+  String _formatDuration(Duration? d) {
+    if (d == null) return '00:00';
+    final twoDigitMinutes = d.inMinutes.remainder(60).toString().padLeft(2, '0');
+    final twoDigitSeconds = d.inSeconds.remainder(60).toString().padLeft(2, '0');
+    return '$twoDigitMinutes:$twoDigitSeconds';
   }
 }

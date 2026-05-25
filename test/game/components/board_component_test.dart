@@ -103,5 +103,20 @@ void main() {
       );
       expect(tileAt00.isSelected, false);
     });
+
+    test('rebuildBoard clears and re-adds tile children', () {
+      final tilesBefore = board.children.whereType<TileComponent>().toList();
+      expect(tilesBefore.length, 72);
+
+      board.rebuildBoard();
+
+      final tilesAfter = board.children.whereType<TileComponent>().toList();
+      expect(tilesAfter.length, 72); // same count after rebuild
+
+      // Verify tiles are different instances (old ones were removed)
+      for (final oldTile in tilesBefore) {
+        expect(board.children.contains(oldTile), isFalse);
+      }
+    });
   });
 }

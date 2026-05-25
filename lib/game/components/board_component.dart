@@ -200,6 +200,19 @@ class BoardComponent extends Component {
   void showDeadlockUI() {
     onDeadlock?.call();
   }
+
+  /// Removes all tile children, rebuilds the board from the current game state,
+  /// and replays the entrance animation.  Resets [_tilesById] so animation
+  /// dispatch works against the new tile instances.
+  void rebuildBoard() {
+    final existingTiles = children.whereType<TileComponent>().toList();
+    for (final tile in existingTiles) {
+      remove(tile);
+    }
+    _tilesById.clear();
+    _buildBoard();
+    _playEntranceAnimation();
+  }
 }
 
 /// Internal helper: pairs a [TileData] with its screen position and z-order.

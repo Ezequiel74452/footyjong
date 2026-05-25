@@ -28,6 +28,8 @@ class FootyJongGame extends FlameGame {
   /// HUD bridges — Flutter widgets listen to these via [ValueListenableBuilder].
   final ValueNotifier<int> scoreNotifier = ValueNotifier<int>(0);
   final ValueNotifier<int> levelNotifier = ValueNotifier<int>(1);
+  final ValueNotifier<bool> deadlockedNotifier = ValueNotifier<bool>(false);
+  final ValueNotifier<Duration?> timerNotifier = ValueNotifier<Duration?>(null);
 
   StreamSubscription<GameEvent>? _eventSub;
   bool _disposed = false;
@@ -77,6 +79,7 @@ class FootyJongGame extends FlameGame {
         board.animateShake(tileA.id, tileB.id);
       case DeadlockDetected():
         board.showDeadlockUI();
+        deadlockedNotifier.value = true;
       case GameWon(:final score, :final level):
         board.animateVictory();
         scoreNotifier.value = score;
@@ -85,6 +88,14 @@ class FootyJongGame extends FlameGame {
           if (!_disposed) onGameWon?.call();
         });
     }
+  }
+
+  /// Rearranges remaining tiles after a deadlock and rebuilds the visual board.
+  /// Resets [deadlockedNotifier] unless the board remains deadlocked.
+  void reshuffle() {
+    gameState.reshuffle();
+    board.rebuildBoard();
+    deadlockedNotifier.value = gameState.phase == GamePhase.deadlocked;
   }
 
   @override
